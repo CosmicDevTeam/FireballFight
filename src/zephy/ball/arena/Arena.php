@@ -21,10 +21,10 @@ class Arena
     private int $timer = 0;
 
     /** @var Stage */
-    private Stage $stage;
+    public Stage $stage;
     
     /** @var Session[] */
-    private array $sessions = [];
+    public array $sessions = [];
 
     /**
      * @param string $identifier
@@ -110,11 +110,14 @@ class Arena
 
     /**
      * @return void
+     * @throws Exception
      */
     public function tick(): void
     {
-        if (array_filter($this->sessions, fn($s) => !($this->world->getBlock($s->getBed()) instanceof Bed))) {
-            $this->stage = new EndStage();
+        
+        if (array_filter($this->sessions, fn($s) => !($this->world->getBlock($s->getBed()) instanceof Bed)) and $this->stage instanceof StartStage) {
+            $winner = reset($this->sessions)->getPlayer();
+            $this->stage = new EndStage($winner);
             $this->stage->onStart($this);
             return;
         }
@@ -122,5 +125,12 @@ class Arena
         if ($this->timer === 180 and $this->stage instanceof StartStage) {
             (new RefillStage())->onStart($this);
         }
+
+        $this->timer++;
+    }
+
+    public function getStage(): Stage
+    {
+        return $this->stage;
     }
 }

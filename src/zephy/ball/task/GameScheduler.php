@@ -5,6 +5,7 @@ namespace zephy\ball\task;
 use pocketmine\scheduler\Task;
 use zephy\ball\arena\Arena;
 use Exception;
+use zephy\ball\stages\types\EndStage;
 use zephy\ball\stages\types\RefillStage;
 
 class GameScheduler extends Task
@@ -27,6 +28,10 @@ class GameScheduler extends Task
      */
     public function onRun(): void
     {
+        if($this->arena->getStage() instanceof EndStage) {
+            $this->getHandler()->cancel();
+        }
+
         $this->arena->tick();
     }
 }
