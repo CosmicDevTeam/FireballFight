@@ -2,19 +2,29 @@
 
 namespace zephy\ball\arena;
 
+use pocketmine\block\Bed;
 use pocketmine\player\Player;
 use pocketmine\Server;
 use pocketmine\world\Position;
 use pocketmine\world\World;
 use Exception;
 use zephy\ball\stages\Stage;
+use zephy\ball\stages\types\EndStage;
+use zephy\ball\stages\types\RefillStage;
 use zephy\ball\stages\types\StartStage;
 use zephy\ball\stages\types\WaitingStage;
+use zephy\ball\team\Session;
 
 class Arena
 {
-    /*** @var Stage */
+    /** @var int  */
+    private int $timer = 0;
+
+    /** @var Stage */
     private Stage $stage;
+    
+    /** @var Session[] */
+    private array $sessions = [];
 
     /**
      * @param string $identifier
@@ -67,17 +77,15 @@ class Arena
      * @param Player[] $players
      * @return void
      */
-    public function randSpawns(array $players): void
+    public function randTeams(array $players): void
     {
-        /** @var Position[] $spawns */
-        $spawns = [$this->data['spawn1'], $this->data['spawn2']];
-        
-        shuffle($spawns);
-        foreach ($players as $index => $player) {
-            if (isset($spawns[$index])) {
-                $player->teleport($spawns[$index]);
+        shuffle($players);
+        array_walk($players, function (Player $player, int $index) {
+            $spawn = $this->data['spawn' . $index] ?? null;
+            if ($spawn !== null) {
+                $this->sessions[$player->getName()] = new Session($player, $spawn, $index);
             }
-        }
+        });
     }
 
     /**
@@ -94,9 +102,25 @@ class Arena
             throw new Exception("Expected 2 players, but received " . count($this->getPlayers()));
         }
 
-        $this->randSpawns(array_map([Server::getInstance(), 'getPlayerExact'], $this->getPlayers()));
+        $this->randTeams(array_map([Server::getInstance(), 'getPlayerExact'], $this->getPlayers()));
 
         $this->stage = new StartStage();
         $this->stage->onStart($this);
+    }
+
+    /**
+     * @return void
+     */
+    public function tick(): void
+    {
+        if (array_filter($this->sessions, fn($s) => !($this->world->getBlock($s->getBed()) instanceof Bed))) {
+            $this->stage = new EndStage();
+            $this->stage->onStart($this);
+            return;
+        }
+        
+        if ($this->timer === 180 and $this->stage instanceof StartStage) {
+            (new RefillStage())->onStart($this);
+        }
     }
 }

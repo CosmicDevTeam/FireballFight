@@ -5,7 +5,7 @@ namespace zephy\ball\stages\types;
 use zephy\ball\arena\Arena;
 use zephy\ball\stages\Stage;
 
-class StartStage extends Stage
+class EndStage extends Stage
 {
 
     /**

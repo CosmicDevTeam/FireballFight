@@ -5,19 +5,21 @@ namespace zephy\ball\task;
 use pocketmine\scheduler\Task;
 use zephy\ball\arena\Arena;
 use Exception;
+use zephy\ball\stages\types\RefillStage;
 
 class GameScheduler extends Task
 {
 
-    private int $timer = 0;
-
     /**
      * @param Arena $arena
+     * @throws Exception
      */
     public function __construct(
         private readonly Arena $arena,
     )
-    {}
+    {
+        $this->arena->initialize();
+    }
 
     /**
      * @inheritDoc
@@ -25,8 +27,6 @@ class GameScheduler extends Task
      */
     public function onRun(): void
     {
-        $this->arena->initialize();
-
-        $this->timer++;
+        $this->arena->tick();
     }
 }
